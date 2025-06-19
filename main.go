@@ -8,7 +8,6 @@ package main
 import (
 	"ProyectoEcommerce/database"
 	"ProyectoEcommerce/handlers"
-	"ProyectoEcommerce/models"
 	"log"
 	"net/http"
 
@@ -59,17 +58,17 @@ func main() {
 		}
 	*/
 	//---------------------------------------------------------------------
-
-	// Intentar iniciar sesión con un usuario
-	usuario, err := models.LoginUsuario("carlos@email.com", "claveSegura123")
-	if err != nil {
-		log.Println(" Fallo en la autenticación")
-	} else if usuario.ID == 0 {
-		log.Println(" Usuario o contraseña incorrectos")
-	} else {
-		log.Println(" Sesión iniciada con éxito:", usuario.Email)
-	}
-
+	/*
+		// Intentar iniciar sesión con un usuario
+		usuario, err := models.LoginUsuario("carlos@email.com", "claveSegura123")
+		if err != nil {
+			log.Println(" Fallo en la autenticación")
+		} else if usuario.ID == 0 {
+			log.Println(" Usuario o contraseña incorrectos")
+		} else {
+			log.Println(" Sesión iniciada con éxito:", usuario.Email)
+		}
+	*/
 	//---------------------------------------------------------------------------
 	/*
 		// Insertar un producto con categoría existente
