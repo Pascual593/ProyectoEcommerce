@@ -8,6 +8,8 @@ import (
 	"ProyectoEcommerce/database"
 	"database/sql"
 	"log"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Usuarios struct {
@@ -19,6 +21,7 @@ type Usuarios struct {
 	Telefono   string
 }
 
+// funcion para obtener usuario por id
 func GetUsuariosById(id int) (Usuarios, error) {
 	var usuarios Usuarios
 	DB, err := database.Connect()
@@ -92,6 +95,8 @@ func GetAllUsuarios() ([]Usuarios, error) {
 
 }
 
+/*
+// funcion para insertar un usuario
 func InsertUsuario(nombre, email, contraseña, direccion, telefono string) error {
 	DB, err := database.Connect()
 	if err != nil {
@@ -113,6 +118,9 @@ func InsertUsuario(nombre, email, contraseña, direccion, telefono string) error
 	log.Println("Usuario registrado correctamente:", email)
 	return nil
 }
+*/
+
+// funcion para actualizar los datos del usuario
 func UpdateUsuario(id int, nombre, email, contraseña, direccion, telefono, rol string) error {
 	DB, err := database.Connect()
 	if err != nil {
@@ -132,6 +140,8 @@ func UpdateUsuario(id int, nombre, email, contraseña, direccion, telefono, rol 
 	log.Println(" Usuario actualizado correctamente:", id)
 	return nil
 }
+
+// funcion para eliminar el registro de un usuario
 func DeleteUsuario(id int) error {
 	DB, err := database.Connect()
 	if err != nil {
@@ -196,4 +206,132 @@ func LoginUsuario(email, contraseña string) (Usuarios, error) {
 
 	log.Println(" Usuario autenticado correctamente:", email)
 	return usuario, nil
+}
+
+// InsertUsuario registra un nuevo usuario con su contraseña cifrada
+func InsertUsuario(nombre, email, contrasena, rol string) (int64, error) {
+	DB, err := database.Connect()
+	if err != nil {
+		log.Println(" Error al conectar a la base de datos:", err)
+		return 0, err
+	}
+	defer DB.Close()
+
+	// Generar hash de la contraseña
+	hash, err := bcrypt.GenerateFromPassword([]byte(contrasena), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println(" Error al encriptar contraseña:", err)
+		return 0, err
+	}
+
+	query := `
+		INSERT INTO usuarios (nombre, email, contraseña, rol)
+		VALUES (?, ?, ?, ?)
+	`
+	result, err := DB.Exec(query, nombre, email, string(hash), rol)
+	if err != nil {
+		log.Println(" Error al registrar usuario:", err)
+		return 0, err
+	}
+
+	id, _ := result.LastInsertId()
+	log.Println(" Usuario registrado con ID:", id)
+	return id, nil
+}
+
+// verificar credenciales de correo y contraseña para el login
+func VerificarCredenciales(email, contrasena string) (int, error) {
+	DB, err := database.Connect()
+	if err != nil {
+		log.Println("❌ Error al conectar a la base de datos:", err)
+		return 0, err
+	}
+	defer DB.Close()
+
+	var id int
+	var hash string
+	err = DB.QueryRow("SELECT id, contraseña FROM usuarios WHERE email = ?", email).Scan(&id, &hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("⚠️ Usuario no encontrado")
+		} else {
+			log.Println("❌ Error al obtener usuario:", err)
+		}
+		return 0, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(contrasena))
+	if err != nil {
+		log.Println("⛔ Contraseña incorrecta")
+		return 0, err
+	}
+
+	log.Println("✅ Usuario autenticado con ID:", id)
+	return id, nil
+}
+
+// GetNombreUsuarioByID devuelve el nombre del usuario correspondiente al ID proporcionado.
+// Se usa para personalizar vistas como el dashboard.
+func GetNombreUsuarioByID(id int) (string, error) {
+	DB, err := database.Connect()
+	if err != nil {
+		return "", err
+	}
+	defer DB.Close()
+
+	var nombre string
+	err = DB.QueryRow("SELECT nombre FROM usuarios WHERE id = ?", id).Scan(&nombre)
+	if err != nil {
+		return "", err
+	}
+	return nombre, nil
+}
+
+// ObtenerNombreYRolPorID consulta el nombre y el rol de un usuario según su ID.
+// ObtenerNombreYRolPorID devuelve el nombre y rol de un usuario según su ID.
+func ObtenerNombreYRolPorID(id int) (string, string, error) {
+	DB, err := database.Connect()
+	if err != nil {
+		log.Println("❌ Error al conectar a la base de datos:", err)
+		return "", "", err
+	}
+	defer DB.Close()
+
+	var nombre, rol string
+	query := "SELECT nombre, rol FROM usuarios WHERE id = ?"
+	err = DB.QueryRow(query, id).Scan(&nombre, &rol)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("⚠️ Usuario no encontrado con ID:", id)
+			return "", "", nil
+		}
+		log.Println("❌ Error al obtener nombre y rol:", err)
+		return "", "", err
+	}
+
+	log.Printf("✅ Usuario ID %d - Nombre: %s | Rol: %s\n", id, nombre, rol)
+	log.Printf("🧪 [func] Retornando nombre='%s', rol='%s'", nombre, rol)
+	return nombre, rol, nil
+}
+func GetRolUsuarioByID(id int) (string, error) {
+	DB, err := database.Connect()
+	if err != nil {
+		log.Println("❌ Error al conectar a la base de datos:", err)
+		return "", err
+	}
+	defer DB.Close()
+
+	var rol string
+	err = DB.QueryRow("SELECT rol FROM usuarios WHERE id = ?", id).Scan(&rol)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("⚠️ Usuario no encontrado con ID:", id)
+			return "", nil
+		}
+		log.Println("❌ Error al obtener el rol:", err)
+		return "", err
+	}
+
+	log.Printf("🔐 Rol del usuario con ID %d: %s", id, rol)
+	return rol, nil
 }

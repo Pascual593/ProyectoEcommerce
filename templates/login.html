@@ -1,0 +1,41 @@
+{{ define "content" }}
+  <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background-color: #f2f6f9; font-family: sans-serif;">
+    <div style="width: 100%; max-width: 420px; padding: 40px; background-color: white;
+                border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
+
+      <h2 style="text-align: center; font-size: 26px; color: #0083b0; margin-bottom: 25px;">
+        🔐 Iniciar sesión
+      </h2>
+
+      {{ if .Error }}
+        <div style="background-color: #ffe6e6; color: #a33; padding: 10px 15px;
+                    border-radius: 6px; margin-bottom: 20px; text-align: center;">
+          {{ .Error }}
+        </div>
+      {{ end }}
+
+      <form method="POST">
+        <label for="email" style="display: block; margin-bottom: 5px; font-weight: bold;">Correo electrónico</label>
+        <input type="email" name="email" id="email" required
+               style="width: 100%; padding: 10px; border-radius: 6px;
+                      border: 1px solid #ccc; margin-bottom: 15px;">
+
+        <label for="password" style="display: block; margin-bottom: 5px; font-weight: bold;">Contraseña</label>
+        <input type="password" name="password" id="password" required
+               style="width: 100%; padding: 10px; border-radius: 6px;
+                      border: 1px solid #ccc; margin-bottom: 25px;">
+
+        <button type="submit"
+                style="width: 100%; padding: 12px; background-color: #0083b0;
+                       color: white; border: none; border-radius: 6px; font-size: 16px;
+                       font-weight: bold; cursor: pointer;">
+          Entrar
+        </button>
+      </form>
+
+      <p style="text-align: center; margin-top: 20px; font-size: 14px; color: #666;">
+        ¿Olvidaste tu contraseña? <a href="#" style="color: #0083b0; text-decoration: none;">Recupérala aquí</a>
+      </p>
+    </div>
+  </div>
+{{ end }}

@@ -6,6 +6,8 @@ package main
 //Avance de proyecto definicion de struct, funciones , conexion de modelo con la bse de datos
 
 import (
+	"encoding/gob"
+
 	"ProyectoEcommerce/database"
 	"ProyectoEcommerce/handlers"
 	"log"
@@ -15,6 +17,7 @@ import (
 )
 
 func main() {
+	gob.Register(map[string]interface{}{})
 	//verifica si se ejecuta la conexion con la base de datos
 	db, err := database.Connect()
 	if err != nil {
@@ -209,13 +212,46 @@ func main() {
 			log.Println(" Detalle de pedido obtenido con éxito, Producto ID:", detalle.ProductoID, "Cantidad:", detalle.Cantidad)
 		}
 	*/
+	/*
+		id, err := models.InsertUsuario("Cesar", "cesar@mail.com", "1234secure", "admin")
+		if err != nil {
+			log.Println(" Registro fallido:", err)
+		} else {
+			log.Println(" Usuario insertado con ID:", id)
+		}
+	*/
+	/*
+		id, err := models.VerificarCredenciales("samantha@mail.com", "1234secure")
+		if err != nil {
+			log.Println("❌ Login fallido:", err)
+		} else {
+			log.Println("🔐 Login exitoso. Usuario ID:", id)
+		}
+	*/
 
 	//---------------------------------------------------------------------
 	//agrgar las consultas a la base de datos para retornarlas como api al sistema principal
 	//--------------------------------------------------------------
 	r := mux.NewRouter()
+	// Servir archivos estáticos desde /uploads/
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads/"))))
 	//definimos la ruta de navegacion para el sistema pero
 	r.HandleFunc("/", handlers.HomeHandler)
+	r.HandleFunc("/login", handlers.LoginHandler).Methods("GET", "POST")
+	r.HandleFunc("/dashboard", handlers.DashboardHandler).Methods("GET")
+	r.HandleFunc("/logout", handlers.LogoutHandler).Methods("GET")
+	r.HandleFunc("/productos", handlers.ProductoHandler).Methods("GET", "POST")
+	r.HandleFunc("/productos/listar", handlers.ListarProductosHandler).Methods("GET")
+	r.HandleFunc("/productos/editar/{id}", handlers.EditarProductoHandler).Methods("GET", "POST")
+	r.HandleFunc("/productos/eliminar/{id}", handlers.EliminarProductoHandler).Methods("GET")
+	r.HandleFunc("/productos/ver/{id}", handlers.VerProductoHandler)
+	r.HandleFunc("/carrito/agregar/{id}", handlers.AgregarAlCarritoHandler).Methods("POST")
+	r.HandleFunc("/carrito/ver", handlers.VerCarritoHandler).Methods("GET")
+	r.HandleFunc("/pedido/confirmar", handlers.ConfirmarPedidoHandler).Methods("POST")
+	r.HandleFunc("/pedido/confirmado", handlers.PedidoConfirmadoHandler).Methods("GET")
+	r.HandleFunc("/inicio", handlers.InicioHandler).Methods("GET")
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads/"))))
+	r.HandleFunc("/productos/nuevo", handlers.ProductoHandler)
 	// inicializar el servidor web con las rutas y controladores
 	log.Println("servidor de la bd inicializado")
 	//http/listenandserve inicia un servidor HTTP en el puerto 8081

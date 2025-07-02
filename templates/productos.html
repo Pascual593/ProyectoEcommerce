@@ -1,0 +1,27 @@
+{{ define "content" }}
+    <h2>Registrar nuevo producto</h2>
+    <form method="POST" enctype="multipart/form-data" style="margin-top: 20px;">
+        <label>Nombre</label><br>
+        <input type="text" name="nombre" required style="width:100%; padding:10px; margin-bottom:10px;"><br>
+
+        <label>Descripción</label><br>
+        <textarea name="descripcion" rows="4" required style="width:100%; padding:10px; margin-bottom:10px;"></textarea><br>
+
+        <label>Precio</label><br>
+        <input type="number" name="precio" step="0.01" required style="width:100%; padding:10px; margin-bottom:10px;"><br>
+
+        <label>Categoría</label><br>
+        <select name="categoria_id" required style="width:100%; padding:10px; margin-bottom:20px;">
+            <option value="">Selecciona una categoría</option>
+            {{ range .Categorias }}
+                <option value="{{ .ID }}">{{ .Nombre }}</option>
+            {{ end }}
+        </select>
+
+        <label>Imagen del producto</label><br>
+        <input type="file" name="imagen" accept="image/*" style="margin-bottom: 20px;"><br>
+        <label>Stock disponible</label><br>
+        <input type="number" name="stock" min="0" value="0" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+        <button type="submit" style="width:100%; padding:12px; background-color:#0083b0; color:white; border:none;">Guardar producto</button>
+    </form>
+{{ end }}

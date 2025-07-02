@@ -1,0 +1,37 @@
+{{ define "content" }}
+    <h2>Editar producto</h2>
+
+    <form method="POST" enctype="multipart/form-data" style="margin-top: 20px;">
+        <label>Nombre</label><br>
+        <input type="text" name="nombre" value="{{ .Producto.Nombre }}" required style="width:100%; padding:10px; margin-bottom:10px;"><br>
+
+        <label>Descripción</label><br>
+        <textarea name="descripcion" rows="4" required style="width:100%; padding:10px; margin-bottom:10px;">{{ .Producto.Descripcion }}</textarea><br>
+
+        <label>Precio</label><br>
+        <input type="number" name="precio" step="0.01" value="{{ printf "%.2f" .Producto.Precio }}" required style="width:100%; padding:10px; margin-bottom:10px;"><br>
+
+        <label>Stock disponible</label><br>
+        <input type="number" name="stock" min="0" value="{{ .Producto.Stock }}" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+
+        <label>Categoría</label><br>
+        <select name="categoria_id" required style="width:100%; padding:10px; margin-bottom:20px;">
+            {{ range .Categorias }}
+                <option value="{{ .ID }}" {{ if eq .ID $.Producto.CategoriaID }}selected{{ end }}>{{ .Nombre }}</option>
+            {{ end }}
+        </select>
+
+        <label>Imagen del producto</label><br>
+        {{ if .Producto.Imagen }}
+        <div style="margin-bottom: 10px;">
+        <strong>Imagen actual:</strong><br>
+        <img src="/uploads/{{ .Producto.Imagen }}" alt="Imagen actual" style="max-width: 120px;"><br>
+        </div>
+        {{ end }}
+
+        <input type="file" name="imagen" accept="image/*" style="margin-bottom: 20px;"><br>
+        <input type="hidden" name="imagen_actual" value="{{ .Producto.Imagen }}">
+
+        <button type="submit" style="width:100%; padding:12px; background-color:#0083b0; color:white; border:none;">Actualizar producto</button>
+    </form>
+{{ end }}

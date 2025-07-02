@@ -1,0 +1,105 @@
+{{ define "content" }}
+  <h2 style="color: #0083b0; font-size: 28px; margin-bottom: 20px;">
+    🛍️ Productos disponibles en catálogo
+  </h2>
+
+  <form method="GET" action="/productos/listar">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+      <input type="text" name="q" placeholder="Buscar por nombre o categoría"
+             value="{{ .Query }}"
+             style="flex: 1 1 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+
+      <select name="categoria"
+              style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; min-width: 180px;">
+        <option value="">Todas las categorías</option>
+        {{ range .Categorias }}
+          <option value="{{ .ID }}" {{ if eq $.CategoriaSeleccionada .ID }}selected{{ end }}>
+            {{ .Nombre }}
+          </option>
+        {{ end }}
+      </select>
+
+      <button type="submit"
+              style="padding: 10px 20px; background-color: #0083b0; color: white;
+                     border: none; border-radius: 5px; cursor: pointer;">
+        🔍 Buscar
+      </button>
+    </div>
+  </form>
+
+  <table style="width: 100%; border-collapse: collapse; font-family: sans-serif;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <thead style="background-color: #0083b0; color: white;">
+      <tr>
+        <th style="padding: 12px;">ID</th>
+        <th style="padding: 12px;">Nombre</th>
+        <th style="padding: 12px;">Descripción</th>
+        <th style="padding: 12px;">Precio</th>
+        <th style="padding: 12px;">Categoría</th>
+        <th style="padding: 12px;">Stock</th>
+        <th style="padding: 12px;">Imagen</th>
+        <th style="padding: 12px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Productos }}
+        <tr style="border-bottom: 1px solid #eee;
+                   transition: background 0.2s ease;"
+            onmouseover="this.style.background='#f7fafd'"
+            onmouseout="this.style.background='white'">
+          <td style="padding: 10px;">{{ .ID }}</td>
+          <td style="padding: 10px;">
+            <a href="/productos/ver/{{ .ID }}" style="color: #00749e; text-decoration: none;">
+              {{ resaltar .Nombre $.Query }}
+            </a>
+          </td>
+          <td style="padding: 10px;">{{ resaltar .Descripcion $.Query }}</td>
+          <td style="padding: 10px;">$ {{ printf "%.2f" .Precio }}</td>
+          <td style="padding: 10px;">{{ resaltar .CategoriaNombre $.Query }}</td>
+          <td style="padding: 10px;">{{ .Stock }}</td>
+          <td style="padding: 10px; text-align: center;">
+            {{ if .Imagen }}
+              <img src="/uploads/{{ .Imagen }}"
+                   alt="Imagen de {{ .Nombre }}"
+                   style="max-width: 70px; max-height: 70px; border-radius: 8px;
+                          border: 1px solid #ccc; object-fit: cover;">
+            {{ else }}
+              <span style="color: #999;">(Sin imagen)</span>
+            {{ end }}
+          </td>
+          <td style="padding: 10px; text-align: center;">
+            {{ if eq $.Rol "admin" }}
+            <a href="/productos/editar/{{ .ID }}"
+               style="display: inline-block; margin-bottom: 5px; padding: 5px 12px;
+                      background-color: #ffc107; color: white; text-decoration: none;
+                      border-radius: 4px; font-size: 14px;">
+              ✏️ Editar
+            </a><br>
+            <a href="/productos/eliminar/{{ .ID }}"
+               onclick="return confirm('¿Seguro que deseas eliminar este producto?');"
+               style="display: inline-block; padding: 5px 12px; background-color: #dc3545;
+                      color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">
+              🗑️ Eliminar
+            </a>
+            {{ else }}
+            <span style="color: #888;">(Sin acciones)</span>
+             {{ end }}
+
+          </td>
+        </tr>
+      {{ else }}
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 25px; color: #999;">
+            <p style="font-size: 17px;">
+              {{ if .Query }}
+                😕 No se encontraron resultados para “{{ .Query }}”.
+              {{ else }}
+                📦 No hay productos registrados aún.
+              {{ end }}
+            </p>
+          </td>
+        </tr>
+      {{ end }}
+    </tbody>
+  </table>
+{{ end }}

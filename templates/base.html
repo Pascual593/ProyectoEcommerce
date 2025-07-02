@@ -1,32 +1,51 @@
-{{ define "base"}}
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Ecommerce</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="">
-    </head>
-    <body>
-        <header>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f7fa;
+        }
 
-        </header>
-        <MAIN>
-            {{ block "content" . }}
-            <!-- contenido de la pagina consultas de la base de datos, animaciones
-             van a estar entre otros archivos-->   
-            {{ end }}
-        </MAIN>
-        <FOOTER>
+        header {
+            background-color: #0083b0;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
 
-        </FOOTER>
-        
-    </body>
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>E-Commerce</h1>
+    </header>
+
+    <main>
+        {{ block "content" . }}{{ end }}
+    </main>
+
+    <footer>
+        © Tu E-Commerce 2025
+    </footer>
+</body>
 </html>
-{{ end }}

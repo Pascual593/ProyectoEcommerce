@@ -1,159 +1,307 @@
 package models
 
-//autor: Pascual Campos
-//fecha: 15/06/2025
-//tema Proyecto Ecommerce
-//Avance de proyecto definicion de struct, funciones , conexion de modelo con la bse de datos
 import (
 	"ProyectoEcommerce/database"
 	"database/sql"
 	"log"
 )
 
+// Producto representa un producto de la tienda.
+// Incluye campos compatibles con la tabla `productos`.
 type Producto struct {
-	ID          int
-	Nombre      string
-	Descripcion string
-	Precio      float64
-	Stock       int
-	CategoriaID int
+	ID              int
+	Nombre          string
+	Descripcion     string
+	Precio          float64
+	CategoriaID     int
+	CategoriaNombre string // ← nuevo campo para mostrar en la tabla
+	Imagen          string
+	Stock           int
 }
 
-// Funcion para ingresar un nuevo registro de un producto
-func InsertProducto(nombre, descripcion string, precio float64, stock int, categoriaID int) error {
-	DB, err := database.Connect()
+// InsertProducto guarda un nuevo producto en la base de datos.
+// Recibe una instancia de Producto con los datos completos.
+func InsertProducto(p Producto) error {
+	db, err := database.Connect()
 	if err != nil {
-		log.Println(" Error al conectar a la base de datos:", err)
 		return err
 	}
-	defer DB.Close()
+	defer db.Close()
 
-	query := "INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id) VALUES (?, ?, ?, ?, ?)"
-	_, err = DB.Exec(query, nombre, descripcion, precio, stock, categoriaID)
+	// Sentencia SQL para insertar un nuevo producto
+	query := `INSERT INTO productos (nombre, descripcion, precio, categoria_id, imagen, stock)
+          VALUES (?, ?, ?, ?, ?, ?)`
+
+	_, err = db.Exec(query, p.Nombre, p.Descripcion, p.Precio, p.CategoriaID, p.Imagen, p.Stock)
 	if err != nil {
-		log.Println("Error al insertar producto:", err)
-		return err
+		log.Println("❌ Error al insertar producto:", err)
 	}
-
-	log.Println(" Producto registrado correctamente:", nombre)
-	return nil
+	return err
 }
 
-// funcion para obtener el registro de un producto por id
-func GetProductoById(id int) (Producto, error) {
-	var producto Producto
-	DB, err := database.Connect()
-	if err != nil {
-		log.Println(" Error al conectar a la base de datos:", err)
-		return producto, err
-	}
-	defer DB.Close()
-
-	// Consultar producto por ID
-	query := "SELECT id, nombre, descripcion, precio, stock, categoria_id FROM productos WHERE id = ?"
-	row := DB.QueryRow(query, id)
-	err = row.Scan(&producto.ID, &producto.Nombre, &producto.Descripcion, &producto.Precio, &producto.Stock, &producto.CategoriaID)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Println(" No se encontró ningún producto con ID:", id)
-			return producto, nil
-		}
-		log.Println(" Error al obtener producto:", err)
-		return producto, err
-	}
-
-	log.Println(" Producto obtenido correctamente:", producto.Nombre)
-	return producto, nil
-}
-
-// funcion para para editar los datos de un producto
-func UpdateProducto(id int, nombre, descripcion string, precio float64, stock int, categoriaID int) error {
-	DB, err := database.Connect()
-	if err != nil {
-		log.Println(" Error al conectar a la base de datos:", err)
-		return err
-	}
-	defer DB.Close()
-
-	// Preparar la consulta SQL para actualizar el producto
-	query := "UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, categoria_id = ? WHERE id = ?"
-	_, err = DB.Exec(query, nombre, descripcion, precio, stock, categoriaID, id)
-	if err != nil {
-		log.Println(" Error al actualizar producto:", err)
-		return err
-	}
-
-	log.Println(" Producto actualizado correctamente:", id)
-	return nil
-}
-
-// funcion para eliminar el registro de un producto
-func DeleteProducto(id int) error {
-	DB, err := database.Connect()
-	if err != nil {
-		log.Println(" Error al conectar a la base de datos:", err)
-		return err
-	}
-	defer DB.Close()
-
-	// Preparar la consulta SQL para eliminar el producto
-	query := "DELETE FROM productos WHERE id = ?"
-	result, err := DB.Exec(query, id)
-	if err != nil {
-		log.Println(" Error al eliminar producto:", err)
-		return err
-	}
-
-	// Verificar que realmente se eliminó un producto
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		log.Println(" Error al obtener filas afectadas:", err)
-		return err
-	}
-
-	if rowsAffected == 0 {
-		log.Println(" No se encontró ningún producto con ID:", id)
-		return nil
-	}
-
-	log.Println(" Producto eliminado correctamente:", id)
-	return nil
-}
-
-// funcion para listar el registro de todos los productos
+// GetAllProductos devuelve todos los productos registrados en la base de datos
 func GetAllProductos() ([]Producto, error) {
-	DB, err := database.Connect()
+	db, err := database.Connect()
 	if err != nil {
-		log.Println(" Error al conectar a la base de datos:", err)
 		return nil, err
 	}
-	defer DB.Close()
+	defer db.Close()
 
-	// Consultar todos los productos
-	query := "SELECT id, nombre, descripcion, precio, stock, categoria_id FROM productos"
-	rows, err := DB.Query(query)
+	query := `
+	SELECT p.id, p.nombre, p.descripcion, p.precio, p.categoria_id, p.stock
+	FROM productos p
+	`
+
+	rows, err := db.Query(query)
 	if err != nil {
-		log.Println(" Error al obtener productos:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var productos []Producto
+
+	for rows.Next() {
+		var p Producto
+		err := rows.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Precio, &p.CategoriaID, &p.Stock)
+		if err != nil {
+			return nil, err
+		}
+		productos = append(productos, p)
+	}
+
+	return productos, nil
+}
+
+// GetAllProductosConCategoria trae productos junto a su categoría (JOIN)
+func GetAllProductosConCategoria() ([]Producto, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := `
+	SELECT p.id, p.nombre, p.descripcion, p.precio, p.imagen, c.id, c.nombre, p.stock
+	FROM productos p
+	JOIN categorias c ON p.categoria_id = c.id
+	ORDER BY p.id DESC
+`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var productos []Producto
+
+	for rows.Next() {
+		var p Producto
+		var imagen sql.NullString
+		err := rows.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Precio, &imagen, &p.CategoriaID, &p.CategoriaNombre, &p.Stock)
+		if err != nil {
+			log.Println("Error al escanear producto:", err)
+			return nil, err
+		}
+		if imagen.Valid {
+			p.Imagen = imagen.String
+		} else {
+			p.Imagen = "" // sin imagen
+		}
+
+		productos = append(productos, p)
+	}
+
+	return productos, nil
+}
+
+// GetProductoByID devuelve los datos de un producto según su ID
+func GetProductoByID(id int) (Producto, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return Producto{}, err
+	}
+	defer db.Close()
+
+	query := `
+		SELECT p.id, p.nombre, p.descripcion, p.precio, p.stock, p.categoria_id, c.nombre, p.imagen
+		FROM productos p
+		JOIN categorias c ON p.categoria_id = c.id
+		WHERE p.id = ?
+	`
+
+	row := db.QueryRow(query, id)
+
+	var p Producto
+	var imagen sql.NullString
+
+	err = row.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Precio, &p.Stock, &p.CategoriaID, &p.CategoriaNombre, &imagen)
+	if err != nil {
+		return Producto{}, err
+	}
+
+	if imagen.Valid {
+		p.Imagen = imagen.String
+	} else {
+		p.Imagen = ""
+	}
+
+	return p, nil
+}
+
+// UpdateProducto actualiza los datos de un producto existente
+func UpdateProducto(p Producto) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	query := `
+	UPDATE productos
+	SET nombre = ?, descripcion = ?, precio = ?, categoria_id = ?, stock = ?
+	WHERE id = ?
+`
+	_, err = db.Exec(query, p.Nombre, p.Descripcion, p.Precio, p.CategoriaID, p.Stock, p.ID)
+	return err
+}
+
+// DeleteProducto elimina un producto de la base de datos por ID
+func DeleteProducto(id int) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	query := "DELETE FROM productos WHERE id = ?"
+	_, err = db.Exec(query, id)
+	return err
+}
+
+func BuscarProductos(query string) ([]Producto, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	querySQL := `
+		SELECT p.id, p.nombre, p.descripcion, p.precio, c.id, c.nombre, p.stock
+		FROM productos p
+		JOIN categorias c ON p.categoria_id = c.id
+		WHERE LOWER(p.nombre) LIKE LOWER(?) 
+  		OR LOWER(p.descripcion) LIKE LOWER(?)
+   		OR LOWER(c.nombre) LIKE LOWER(?)
+		ORDER BY p.id DESC
+	`
+
+	like := "%" + query + "%"
+	rows, err := db.Query(querySQL, like, like, like)
+	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var productos []Producto
 	for rows.Next() {
-		var producto Producto
-		err = rows.Scan(&producto.ID, &producto.Nombre, &producto.Descripcion, &producto.Precio, &producto.Stock, &producto.CategoriaID)
+		var p Producto
+		err := rows.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Precio, &p.CategoriaID, &p.CategoriaNombre, &p.Stock)
 		if err != nil {
-			log.Println(" Error al leer producto:", err)
 			return nil, err
 		}
-		productos = append(productos, producto)
+		productos = append(productos, p)
 	}
 
-	if len(productos) == 0 {
-		log.Println(" No hay productos registrados en la base de datos")
+	return productos, nil
+}
+func BuscarProductosFiltrado(query string, categoriaID int) ([]Producto, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	querySQL := `
+		SELECT p.id, p.nombre, p.descripcion, p.precio, c.id, c.nombre, p.stock
+		FROM productos p
+		JOIN categorias c ON p.categoria_id = c.id
+		WHERE (
+			LOWER(p.nombre) LIKE LOWER(?)
+			OR LOWER(p.descripcion) LIKE LOWER(?)
+			OR LOWER(c.nombre) LIKE LOWER(?)
+		)
+	`
+
+	params := []interface{}{"%" + query + "%", "%" + query + "%", "%" + query + "%"}
+
+	if categoriaID > 0 {
+		querySQL += " AND c.id = ?"
+		params = append(params, categoriaID)
 	}
 
-	log.Println(" Productos obtenidos correctamente:", len(productos))
+	querySQL += " ORDER BY p.id DESC"
+
+	rows, err := db.Query(querySQL, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var productos []Producto
+	for rows.Next() {
+		var p Producto
+		err := rows.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Precio, &p.CategoriaID, &p.CategoriaNombre, &p.Stock)
+		if err != nil {
+			return nil, err
+		}
+		productos = append(productos, p)
+	}
+
+	return productos, nil
+}
+func ListarProductos() ([]Producto, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := `
+		SELECT p.id, p.nombre, p.descripcion, p.precio, c.id, c.nombre, p.imagen, p.stock
+		FROM productos p
+		JOIN categorias c ON p.categoria_id = c.id
+		ORDER BY p.id DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var productos []Producto
+
+	for rows.Next() {
+		var p Producto
+		var imagen sql.NullString
+
+		err := rows.Scan(
+			&p.ID, &p.Nombre, &p.Descripcion, &p.Precio,
+			&p.CategoriaID, &p.CategoriaNombre, &imagen, &p.Stock,
+		)
+		if err != nil {
+			log.Println("❌ Error al escanear producto:", err)
+			continue
+		}
+
+		p.Imagen = ""
+		if imagen.Valid {
+			p.Imagen = imagen.String
+		}
+
+		productos = append(productos, p)
+	}
+
 	return productos, nil
 }
